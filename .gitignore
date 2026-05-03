@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.idea/
+.vscode/
+*.log
+data/*.sqlite
+data/*.sqlite-journal
+.pytest_cache/
+exports/
+.whl
