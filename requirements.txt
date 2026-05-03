@@ -10,5 +10,4 @@ slowapi>=0.1.9
 aiosqlite>=0.20.0
 python-json-logger>=2.0.7
 psycopg2-binary>=2.9.9
-# NetSDK is installed separately:
-#   pip install path/to/NetSDK-2.0.0.1-py3-none-win_amd64.whl
+NetSDK-2.0.0.1-py3-none-win_amd64.whl

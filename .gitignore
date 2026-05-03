@@ -10,4 +10,4 @@ data/*.sqlite
 data/*.sqlite-journal
 .pytest_cache/
 exports/
-.whl
+*.whl
