@@ -21,7 +21,7 @@ from app.core.device_pool import DevicePool
 from app.core.rate_limit import limiter
 from app.exceptions import register_exception_handlers
 from app.logging_setup import configure_logging, new_request_id
-from app.routers import attendance, auth, dghs, face_lookup, jobs, meta, migration, users
+from app.routers import attendance, auth, dghs, face_lookup, jobs, meta, migration, users, bulk_enroll
 
 log = logging.getLogger(__name__)
 
@@ -113,6 +113,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs.router)
     app.include_router(dghs.router)
     app.include_router(face_lookup.router)
+    app.include_router(bulk_enroll.router)
 
     return app
 

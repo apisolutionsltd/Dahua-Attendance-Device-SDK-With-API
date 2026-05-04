@@ -1,0 +1,4 @@
+user_id,name,department,door,valid_years
+EMP1001,John Doe,Engineering,1,10
+EMP1002,Jane Smith,HR,1,10
+EMP1003,Bob Wilson,Sales,1,5
