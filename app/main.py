@@ -21,7 +21,7 @@ from app.core.device_pool import DevicePool
 from app.core.rate_limit import limiter
 from app.exceptions import register_exception_handlers
 from app.logging_setup import configure_logging, new_request_id
-from app.routers import attendance, auth, dghs, face_lookup, jobs, meta, migration, users, bulk_enroll
+from app.routers import attendance, auth, dghs, face_lookup, jobs, meta, migration, scheduler, users, bulk_enroll
 
 log = logging.getLogger(__name__)
 
@@ -51,10 +51,14 @@ async def lifespan(app: FastAPI):
                 "device": dev.name, "ip": dev.ip, "error": str(e)})
     app.state.pool = pool
 
+    from app.services import scheduler_service
+    scheduler_service.start(pool)
+
     yield
 
     # Shutdown
     log.info("shutdown")
+    scheduler_service.stop()
     pool.shutdown()
 
 
@@ -114,7 +118,7 @@ def create_app() -> FastAPI:
     app.include_router(dghs.router)
     app.include_router(face_lookup.router)
     app.include_router(bulk_enroll.router)
-
+    app.include_router(scheduler.router)
     return app
 
 
