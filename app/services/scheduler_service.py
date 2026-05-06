@@ -5,10 +5,10 @@ Runs every 60 minutes inside the FastAPI process using APScheduler.
 Pushes attendance + faces for host then recv (sequential).
 Uses the same state-file resume logic as the manual API push.
 
-Started/stopped via the FastAPI lifespan in main.py.
-Controlled via GET/POST /scheduler/* endpoints.
+Every run is written to logs/scheduler.log (plain text, daily rotation, 30 days).
+
+Log file location: logs/scheduler.log  (next to where you run uvicorn)
 """
-import logging
 import threading
 from datetime import datetime
 from typing import Optional
@@ -18,9 +18,11 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.core import db
 from app.core.device_pool import DevicePool
+from app.logging_setup import get_scheduler_logger
 from app.services import dghs_service, job_service
 
-log = logging.getLogger(__name__)
+# Use the dedicated scheduler logger → writes to logs/scheduler.log
+log = get_scheduler_logger()
 
 # Devices to push, in order
 SCHEDULER_DEVICES = ["host", "recv"]
@@ -28,7 +30,7 @@ SCHEDULER_DEVICES = ["host", "recv"]
 # Interval in minutes
 SCHEDULER_INTERVAL_MINUTES = 60
 
-# In-memory record of the last scheduled run
+# In-memory record of the last scheduled run (for /scheduler/status endpoint)
 _last_run: dict = {}
 _last_run_lock = threading.Lock()
 
@@ -46,56 +48,91 @@ def _record_run(device: str, job_id: str, status: str, detail: str = ""):
 def scheduled_push(pool: DevicePool) -> None:
     """
     Called by APScheduler every 60 minutes.
-    Pushes host first, then recv. Sequential — recv waits for host to finish.
-    Uses state-file resume: only pushes records newer than last_pushed.
+    Pushes host first, then recv. Sequential.
     """
-    log.info("scheduler_run_start", extra={"devices": SCHEDULER_DEVICES})
+    run_start = datetime.utcnow()
+    log.info("=" * 60)
+    log.info(f"SCHEDULER RUN STARTED  —  {run_start.strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    log.info(f"Devices: {', '.join(SCHEDULER_DEVICES)}")
+    log.info("=" * 60)
 
     for device_name in SCHEDULER_DEVICES:
-        # Skip devices that have no DGHS mapping
+        log.info(f"[{device_name}] ── Starting push ──")
+
+        # Skip devices with no DGHS mapping
         try:
-            dghs_service.get_dghs_device_id(device_name)
-        except Exception:
-            log.warning("scheduler_skip_no_mapping",
-                        extra={"device": device_name})
+            dghs_id = dghs_service.get_dghs_device_id(device_name)
+            log.info(f"[{device_name}] DGHS device_id = {dghs_id}")
+        except Exception as e:
+            log.warning(f"[{device_name}] SKIPPED — no DGHS mapping: {e}")
+            _record_run(device_name, "", "skipped", "no DGHS mapping")
             continue
 
-        # Skip devices not registered in the pool
+        # Skip devices not connected
         if not pool.is_connected(device_name):
-            log.warning("scheduler_skip_not_connected",
-                        extra={"device": device_name})
+            log.warning(f"[{device_name}] SKIPPED — device not connected")
             _record_run(device_name, "", "skipped", "device not connected")
             continue
 
-        log.info("scheduler_push_start", extra={"device": device_name})
+        # Create a job record in PostgreSQL
         job_id = job_service.create_job(
             kind="dghs_push_scheduled",
             params={"device": device_name, "trigger": "scheduler"},
         )
+        log.info(f"[{device_name}] Job created: {job_id}")
         _record_run(device_name, job_id, "running")
 
-        # run_dghs_push is synchronous (blocking) — runs in this thread.
-        # This is intentional: host finishes before recv starts.
+        device_start = datetime.utcnow()
+
+        # Run the push synchronously — recv waits for host to finish
         dghs_service.run_dghs_push(
             job_id=job_id,
             pool=pool,
             device_name=device_name,
-            days=None,       # use state-file resume
+            days=None,
             since=None,
             successful_only=False,
             user_ids_filter=None,
             ignore_state=False,
         )
 
-        # Read back the final job status for our record
+        # Read final result from DB
         row = db.get_job(job_id)
-        status = row.get("status", "unknown") if row else "unknown"
-        error  = row.get("error", "") if row else ""
-        _record_run(device_name, job_id, status, error[:200] if error else "")
-        log.info("scheduler_push_done",
-                 extra={"device": device_name, "job_id": job_id, "status": status})
+        status  = row.get("status", "unknown") if row else "unknown"
+        error   = row.get("error", "") if row else ""
+        result  = {}
+        if row and row.get("result_json"):
+            import json
+            try:
+                result = json.loads(row["result_json"])
+            except Exception:
+                pass
 
-    log.info("scheduler_run_complete", extra={"devices": SCHEDULER_DEVICES})
+        elapsed = (datetime.utcnow() - device_start).total_seconds()
+        _record_run(device_name, job_id, status, error[:200] if error else "")
+
+        if status == "done":
+            log.info(
+                f"[{device_name}] DONE  "
+                f"total={result.get('total', '?')}  "
+                f"pushed={result.get('pushed', '?')}  "
+                f"failed={result.get('failed', '?')}  "
+                f"no_face={result.get('skipped_no_face', '?')}  "
+                f"elapsed={elapsed:.1f}s  "
+                f"latest={result.get('latest_timestamp', '?')}"
+            )
+        else:
+            log.error(
+                f"[{device_name}] FAILED  "
+                f"status={status}  "
+                f"elapsed={elapsed:.1f}s  "
+                f"error={error[:300]}"
+            )
+
+    total_elapsed = (datetime.utcnow() - run_start).total_seconds()
+    log.info("=" * 60)
+    log.info(f"SCHEDULER RUN COMPLETE  —  elapsed={total_elapsed:.1f}s")
+    log.info("=" * 60)
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +144,7 @@ _scheduler: Optional[BackgroundScheduler] = None
 def start(pool: DevicePool) -> None:
     global _scheduler
     if _scheduler and _scheduler.running:
-        log.warning("scheduler already running — skipping start")
+        log.warning("Scheduler already running — skipping start")
         return
 
     _scheduler = BackgroundScheduler(timezone="UTC")
@@ -118,53 +155,46 @@ def start(pool: DevicePool) -> None:
         id="dghs_push",
         name="DGHS attendance push",
         replace_existing=True,
-        # Run first time after one interval (not immediately at startup).
-        # Change to next_run_time=datetime.utcnow() to run at startup too.
     )
     _scheduler.start()
     job = _scheduler.get_job("dghs_push")
     next_run = job.next_run_time.isoformat() if job and job.next_run_time else "unknown"
-    log.info("scheduler_started",
-             extra={"interval_min": SCHEDULER_INTERVAL_MINUTES,
-                    "next_run": next_run})
+    log.info(f"Scheduler started  —  interval={SCHEDULER_INTERVAL_MINUTES}min  next_run={next_run}")
 
 
 def stop() -> None:
     global _scheduler
     if _scheduler and _scheduler.running:
         _scheduler.shutdown(wait=False)
-        log.info("scheduler_stopped")
+        log.info("Scheduler stopped")
     _scheduler = None
 
 
 def trigger_now(pool: DevicePool) -> str:
-    """Manually trigger a push right now. Returns a status message."""
+    """Manually trigger a push right now."""
     if _scheduler and _scheduler.running:
         _scheduler.modify_job("dghs_push", next_run_time=datetime.utcnow())
         return "Triggered — push will start within seconds."
-    # Scheduler not running — run directly in a thread so we don't block
     t = threading.Thread(target=scheduled_push, args=(pool,), daemon=True)
     t.start()
     return "Scheduler not running — triggered directly in background thread."
 
 
 def get_status() -> dict:
-    """Return scheduler status for the /scheduler/status endpoint."""
     running = bool(_scheduler and _scheduler.running)
     next_run = None
     if running:
         job = _scheduler.get_job("dghs_push")
         if job and job.next_run_time:
             next_run = job.next_run_time.isoformat()
-
     with _last_run_lock:
         last = dict(_last_run)
-
     return {
         "running": running,
         "interval_minutes": SCHEDULER_INTERVAL_MINUTES,
         "devices": SCHEDULER_DEVICES,
         "next_run_utc": next_run,
+        "log_file": "logs/scheduler.log",
         "last_runs": last,
     }
 
@@ -172,6 +202,7 @@ def get_status() -> dict:
 def pause() -> str:
     if _scheduler and _scheduler.running:
         _scheduler.pause_job("dghs_push")
+        log.info("Scheduler paused by user")
         return "Scheduler paused."
     return "Scheduler is not running."
 
@@ -181,5 +212,6 @@ def resume() -> str:
         _scheduler.resume_job("dghs_push")
         job = _scheduler.get_job("dghs_push")
         next_run = job.next_run_time.isoformat() if job and job.next_run_time else "unknown"
+        log.info(f"Scheduler resumed  —  next_run={next_run}")
         return f"Scheduler resumed. Next run: {next_run}"
     return "Scheduler is not running."

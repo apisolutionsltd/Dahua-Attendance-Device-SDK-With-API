@@ -5,6 +5,7 @@ __pycache__/
 venv/
 .idea/
 .vscode/
+*.log
 data/*.sqlite
 data/*.sqlite-journal
 .pytest_cache/
