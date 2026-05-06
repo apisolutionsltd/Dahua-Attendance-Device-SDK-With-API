@@ -9,7 +9,6 @@ changes. We deliberately avoided .env for this module per requirements.
 """
 import json
 import logging
-import sqlite3
 import time
 import traceback
 from datetime import datetime, timedelta
@@ -80,26 +79,34 @@ def init_state_table():
     pass
 
 
+# def get_state(device: str) -> Optional[dict]:
+#     with db.get_conn() as c:
+#         c.row_factory = sqlite3.Row
+#         row = c.execute("SELECT * FROM dghs_state WHERE device = ?", (device,)).fetchone()
+#         return dict(row) if row else None
+
+
 def get_state(device: str) -> Optional[dict]:
-    with db.get_conn() as c:
-        c.row_factory = sqlite3.Row
-        row = c.execute("SELECT * FROM dghs_state WHERE device = ?", (device,)).fetchone()
-        return dict(row) if row else None
+    return db.get_dghs_state(device)
 
 
 def upsert_state(device: str, dghs_device_id: str,
                  last_pushed: Optional[str], count: int):
-    now = datetime.utcnow().isoformat(timespec="seconds")
-    with db.get_conn() as c:
-        c.execute("""
-            INSERT INTO dghs_state (device, dghs_device_id, last_pushed, last_pushed_count, last_run_at)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(device) DO UPDATE SET
-                dghs_device_id = excluded.dghs_device_id,
-                last_pushed = COALESCE(excluded.last_pushed, dghs_state.last_pushed),
-                last_pushed_count = excluded.last_pushed_count,
-                last_run_at = excluded.last_run_at
-        """, (device, dghs_device_id, last_pushed, count, now))
+    db.upsert_dghs_state(device, dghs_device_id, last_pushed, count)
+
+# def upsert_state(device: str, dghs_device_id: str,
+#                  last_pushed: Optional[str], count: int):
+#     now = datetime.utcnow().isoformat(timespec="seconds")
+#     with db.get_conn() as c:
+#         c.execute("""
+#             INSERT INTO dghs_state (device, dghs_device_id, last_pushed, last_pushed_count, last_run_at)
+#             VALUES (?, ?, ?, ?, ?)
+#             ON CONFLICT(device) DO UPDATE SET
+#                 dghs_device_id = excluded.dghs_device_id,
+#                 last_pushed = COALESCE(excluded.last_pushed, dghs_state.last_pushed),
+#                 last_pushed_count = excluded.last_pushed_count,
+#                 last_run_at = excluded.last_run_at
+#         """, (device, dghs_device_id, last_pushed, count, now))
 
 
 # ===========================================================================
