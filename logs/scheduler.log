@@ -292,3 +292,24 @@
 2026-05-11 14:13:22  INFO      SCHEDULER RUN COMPLETE  —  elapsed=2.6s
 2026-05-11 14:13:22  INFO      ============================================================
 2026-05-11 14:14:37  INFO      Scheduler paused by user
+2026-05-11 15:44:02  INFO      Scheduler stopped
+2026-05-11 15:44:04  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T16:14:04.482743+06:00
+2026-05-11 15:48:41  INFO      Scheduler stopped
+2026-05-11 15:48:43  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T16:18:43.600668+06:00
+2026-05-11 15:49:10  INFO      Scheduler resumed  —  next_run=2026-05-11T16:18:43.600668+06:00
+2026-05-11 15:50:02  INFO      ============================================================
+2026-05-11 15:50:02  INFO      SCHEDULER RUN STARTED  —  2026-05-11 09:50:02 UTC
+2026-05-11 15:50:02  INFO      Devices: host, recv
+2026-05-11 15:50:02  INFO      ============================================================
+2026-05-11 15:50:02  INFO      [host] ── Starting push ──
+2026-05-11 15:50:02  INFO      [host] DGHS device_id = 24001002
+2026-05-11 15:50:02  INFO      [host] Job created: e1fca5741525453d
+2026-05-11 15:50:04  INFO      [host] DONE  total=14  pushed=14  failed=0  no_face=0  elapsed=1.7s  latest=2026-05-11T06:06:29
+2026-05-11 15:50:04  INFO      [recv] ── Starting push ──
+2026-05-11 15:50:04  INFO      [recv] DGHS device_id = 24001003
+2026-05-11 15:50:04  INFO      [recv] Job created: 76c4f09fb3744a91
+2026-05-11 15:50:05  INFO      [recv] DONE  total=9  pushed=9  failed=0  no_face=0  elapsed=0.8s  latest=2026-05-06T10:54:48
+2026-05-11 15:50:05  INFO      ============================================================
+2026-05-11 15:50:05  INFO      SCHEDULER RUN COMPLETE  —  elapsed=2.5s
+2026-05-11 15:50:05  INFO      ============================================================
+2026-05-11 15:50:58  INFO      Scheduler paused by user
