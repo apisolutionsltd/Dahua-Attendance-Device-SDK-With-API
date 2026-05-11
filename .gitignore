@@ -5,7 +5,7 @@ __pycache__/
 venv/
 .idea/
 .vscode/
-logs/*.log
+logs/scheduler.log
 data/*.sqlite
 data/*.sqlite-journal
 .pytest_cache/
