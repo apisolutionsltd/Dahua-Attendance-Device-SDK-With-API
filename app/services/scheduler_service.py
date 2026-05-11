@@ -28,7 +28,7 @@ log = get_scheduler_logger()
 SCHEDULER_DEVICES = ["host", "recv"]
 
 # Interval in minutes
-SCHEDULER_INTERVAL_MINUTES = 60
+SCHEDULER_INTERVAL_MINUTES = 2
 
 # In-memory record of the last scheduled run (for /scheduler/status endpoint)
 _last_run: dict = {}

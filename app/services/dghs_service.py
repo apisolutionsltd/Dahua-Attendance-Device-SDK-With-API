@@ -53,6 +53,8 @@ DGHS_HTTP_TIMEOUT_SEC = 30
 DGHS_PAUSE_EVERY = 100
 DGHS_PAUSE_SECONDS = 1.0
 
+DGHS_BATCH_SIZE = 20
+
 
 # ===========================================================================
 # Verify-mode mapping (Dahua emMethod → DGHS verify_mode string)
@@ -172,6 +174,59 @@ def _push_log_only(log_entry: dict, session: requests.Session) -> tuple[bool, st
     return False, f"http_{resp.status_code}: {resp.text[:200]}"
 
 
+def _push_batch(
+    entries: list[dict],
+    face_cache: dict[str, Optional[bytes]],
+    session: requests.Session,
+) -> tuple[bool, str]:
+    """
+    Push up to DGHS_BATCH_SIZE records in ONE multipart request.
+
+    Returns:
+        (ok, message)
+    """
+
+    logs_json = json.dumps(entries)
+
+    files = {
+        "Logs": (None, logs_json),
+    }
+
+    image_index = 1
+
+    for entry in entries:
+        uid = entry["user_id"]
+        jpg = face_cache.get(uid)
+
+        if not jpg:
+            continue
+
+        files[f"{DGHS_FACE_FIELD}_{image_index}"] = (
+            f"{uid}.jpg",
+            jpg,
+            "image/jpeg",
+        )
+
+        image_index += 1
+
+    headers = {"Api-Key": DGHS_API_KEY}
+
+    try:
+        resp = session.post(
+            DGHS_API_URL,
+            headers=headers,
+            files=files,
+            timeout=DGHS_HTTP_TIMEOUT_SEC,
+        )
+    except requests.RequestException as e:
+        return False, f"http_error: {e}"
+
+    if 200 <= resp.status_code < 300:
+        return True, f"http_{resp.status_code}: {resp.text[:500]}"
+
+    return False, f"http_{resp.status_code}: {resp.text[:500]}"
+
+
 # ===========================================================================
 # The main push routine — invoked by the background job runner
 # ===========================================================================
@@ -281,56 +336,171 @@ def run_dghs_push(
             "users": len(unique_users), "with_face": face_count})
 
         # Phase 3: push records, one HTTP call each
+        # session = requests.Session()
+        # pushed = 0
+        # failed = 0
+        # skipped_no_face = 0
+        # latest_ts = None
+        # first_failure: Optional[str] = None
+
+        # for i, entry in enumerate(records, 1):
+        #     if i % 10 == 0 or i == 1:
+        #         db.update_job(
+        #             job_id,
+        #             progress=f"pushing {i}/{len(records)} (ok={pushed}, fail={failed})",
+        #         )
+
+        #     uid = entry["user_id"]
+        #     jpg = face_cache.get(uid)
+
+        #     if jpg is None:
+        #         ok, msg = _push_log_only(entry, session)
+        #         if ok:
+        #             pushed += 1
+        #             skipped_no_face += 1
+        #         else:
+        #             failed += 1
+        #             if first_failure is None:
+        #                 first_failure = f"[{uid}] {msg}"
+        #     else:
+        #         ok, msg = _push_one(entry, jpg, session)
+        #         if ok:
+        #             pushed += 1
+        #         else:
+        #             failed += 1
+        #             if first_failure is None:
+        #                 first_failure = f"[{uid}] {msg}"
+
+        #     if ok and (latest_ts is None or entry["timestamp"] > latest_ts):
+        #         latest_ts = entry["timestamp"]
+
+        #     if i % DGHS_PAUSE_EVERY == 0:
+        #         time.sleep(DGHS_PAUSE_SECONDS)
+
+        # # Phase 4: update state row only if everything succeeded
+        # if not ignore_state and latest_ts and failed == 0:
+        #     upsert_state(device_name, dghs_device_id, latest_ts, pushed)
+        #     log.info("dghs_state_saved", extra={
+        #         "device": device_name, "last_pushed": latest_ts})
+        # elif failed > 0:
+        #     log.warning("dghs_state_not_saved", extra={
+        #         "device": device_name,
+                # "reason": f"{failed} push(es) failed; same window will retry next run"})
+
+        
+
+        # New
+                # ------------------------------------------------------------------
+        # Phase 3: push records in batches of 20
+        # ------------------------------------------------------------------
+        records.sort(key=lambda r: (r["timestamp"], r["user_id"]))
+
         session = requests.Session()
+
         pushed = 0
         failed = 0
         skipped_no_face = 0
         latest_ts = None
         first_failure: Optional[str] = None
 
-        for i, entry in enumerate(records, 1):
-            if i % 10 == 0 or i == 1:
-                db.update_job(
-                    job_id,
-                    progress=f"pushing {i}/{len(records)} (ok={pushed}, fail={failed})",
+        total_batches = (
+            len(records) + DGHS_BATCH_SIZE - 1
+        ) // DGHS_BATCH_SIZE
+
+        for batch_index in range(total_batches):
+
+            start_idx = batch_index * DGHS_BATCH_SIZE
+            end_idx = start_idx + DGHS_BATCH_SIZE
+
+            batch = records[start_idx:end_idx]
+
+            batch_no = batch_index + 1
+
+            db.update_job(
+                job_id,
+                progress=(
+                    f"batch {batch_no}/{total_batches} "
+                    f"(ok={pushed}, fail={failed})"
+                ),
+            )
+
+            batch_users = [x["user_id"] for x in batch]
+
+            log.info(
+                "dghs_batch_start",
+                extra={
+                    "device": device_name,
+                    "batch": batch_no,
+                    "batch_size": len(batch),
+                    "users": batch_users,
+                },
+            )
+
+            ok, msg = _push_batch(batch, face_cache, session)
+
+            # --------------------------------------------------------------
+            # SUCCESS
+            # --------------------------------------------------------------
+            if ok:
+
+                pushed += len(batch)
+
+                skipped_no_face += sum(
+                    1
+                    for x in batch
+                    if face_cache.get(x["user_id"]) is None
                 )
 
-            uid = entry["user_id"]
-            jpg = face_cache.get(uid)
+                batch_latest_ts = max(x["timestamp"] for x in batch)
 
-            if jpg is None:
-                ok, msg = _push_log_only(entry, session)
-                if ok:
-                    pushed += 1
-                    skipped_no_face += 1
-                else:
-                    failed += 1
-                    if first_failure is None:
-                        first_failure = f"[{uid}] {msg}"
-            else:
-                ok, msg = _push_one(entry, jpg, session)
-                if ok:
-                    pushed += 1
-                else:
-                    failed += 1
-                    if first_failure is None:
-                        first_failure = f"[{uid}] {msg}"
+                latest_ts = batch_latest_ts
 
-            if ok and (latest_ts is None or entry["timestamp"] > latest_ts):
-                latest_ts = entry["timestamp"]
+                # IMPORTANT:
+                # Save progress IMMEDIATELY after successful batch
+                if not ignore_state:
+                    upsert_state(
+                        device_name,
+                        dghs_device_id,
+                        latest_ts,
+                        pushed,
+                    )
 
-            if i % DGHS_PAUSE_EVERY == 0:
-                time.sleep(DGHS_PAUSE_SECONDS)
+                log.info(
+                    "dghs_batch_success",
+                    extra={
+                        "device": device_name,
+                        "batch": batch_no,
+                        "latest_ts": latest_ts,
+                        "pushed_total": pushed,
+                    },
+                )
 
-        # Phase 4: update state row only if everything succeeded
-        if not ignore_state and latest_ts and failed == 0:
-            upsert_state(device_name, dghs_device_id, latest_ts, pushed)
-            log.info("dghs_state_saved", extra={
-                "device": device_name, "last_pushed": latest_ts})
-        elif failed > 0:
-            log.warning("dghs_state_not_saved", extra={
-                "device": device_name,
-                "reason": f"{failed} push(es) failed; same window will retry next run"})
+                continue
+
+            # --------------------------------------------------------------
+            # FAILURE
+            # --------------------------------------------------------------
+            failed += len(batch)
+
+            if first_failure is None:
+                first_failure = (
+                    f"batch={batch_no} "
+                    f"users={batch_users} "
+                    f"error={msg}"
+                )
+
+            log.error(
+                "dghs_batch_failed",
+                extra={
+                    "device": device_name,
+                    "batch": batch_no,
+                    "users": batch_users,
+                    "error": msg,
+                },
+            )
+
+            # STOP IMMEDIATELY
+            break
 
         result = {
             "device": device_name,
@@ -342,7 +512,8 @@ def run_dghs_push(
             "skipped_no_face": skipped_no_face,
             "latest_timestamp": latest_ts,
             "first_failure": first_failure,
-            "state_advanced": (failed == 0 and latest_ts is not None and not ignore_state),
+            # "state_advanced": (failed == 0 and latest_ts is not None and not ignore_state),
+            "state_advanced": (latest_ts is not None and not ignore_state),
         }
         db.update_job(job_id, status="done", result_json=json.dumps(result),
                       progress=None)
