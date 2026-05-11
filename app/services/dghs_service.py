@@ -35,8 +35,8 @@ DGHS_OFFICE_ID = "10000033"
 # The KEY must exactly match a device 'name' in your DEVICES env var.
 # If a device isn't in this map, push will be refused with a clear error.
 DGHS_DEVICE_ID_MAP: dict[str, str] = {
-    "host": "24001002",   # 10.10.20.78 (DHI-ASI6214S-PW)
-    "recv": "24001003", # 10.10.20.82 — uncomment & set real DGHS ID when known
+    "24001002": "24001002",   # 10.10.20.78 (DHI-ASI6214S-PW)
+    "24001003": "24001003", # 10.10.20.82 — uncomment & set real DGHS ID when known
 }
 
 # Field name the API expects for the attached photo (multipart). Most likely

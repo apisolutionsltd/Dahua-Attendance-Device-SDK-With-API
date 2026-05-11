@@ -313,3 +313,93 @@
 2026-05-11 15:50:05  INFO      SCHEDULER RUN COMPLETE  —  elapsed=2.5s
 2026-05-11 15:50:05  INFO      ============================================================
 2026-05-11 15:50:58  INFO      Scheduler paused by user
+2026-05-11 16:25:03  INFO      Scheduler resumed  —  next_run=2026-05-11T16:48:43.600668+06:00
+2026-05-11 16:26:11  INFO      Scheduler paused by user
+2026-05-11 16:28:59  INFO      Scheduler stopped
+2026-05-11 16:29:04  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T16:59:04.913863+06:00
+2026-05-11 16:29:32  INFO      Scheduler paused by user
+2026-05-11 16:52:18  INFO      Scheduler stopped
+2026-05-11 16:52:19  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:22:19.911295+06:00
+2026-05-11 16:52:58  INFO      Scheduler stopped
+2026-05-11 16:53:02  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:23:02.149566+06:00
+2026-05-11 16:55:05  INFO      Scheduler stopped
+2026-05-11 16:55:06  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:25:06.595514+06:00
+2026-05-11 16:55:12  INFO      Scheduler stopped
+2026-05-11 16:55:13  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:25:13.804100+06:00
+2026-05-11 16:55:14  INFO      Scheduler stopped
+2026-05-11 16:55:18  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:25:18.687609+06:00
+2026-05-11 17:01:03  INFO      Scheduler stopped
+2026-05-11 17:01:06  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:31:06.649711+06:00
+2026-05-11 17:05:17  INFO      Scheduler stopped
+2026-05-11 17:05:19  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:35:19.033439+06:00
+2026-05-11 17:05:21  INFO      Scheduler stopped
+2026-05-11 17:05:24  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:35:24.177449+06:00
+2026-05-11 17:06:08  INFO      Scheduler stopped
+2026-05-11 17:06:10  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:36:10.292293+06:00
+2026-05-11 17:06:18  INFO      Scheduler stopped
+2026-05-11 17:06:22  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:36:22.318217+06:00
+2026-05-11 17:25:07  INFO      Scheduler stopped
+2026-05-11 17:25:10  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:55:10.144509+06:00
+2026-05-11 17:25:10  INFO      Scheduler stopped
+2026-05-11 17:25:11  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:55:11.879891+06:00
+2026-05-11 17:27:45  INFO      Scheduler stopped
+2026-05-11 17:27:46  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:57:46.956411+06:00
+2026-05-11 17:27:50  INFO      Scheduler stopped
+2026-05-11 17:27:52  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:57:52.951446+06:00
+2026-05-11 17:27:53  INFO      Scheduler stopped
+2026-05-11 17:27:55  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:57:55.165777+06:00
+2026-05-11 17:27:57  INFO      Scheduler stopped
+2026-05-11 17:28:02  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T17:58:02.121094+06:00
+2026-05-11 17:32:04  INFO      Scheduler stopped
+2026-05-11 17:32:06  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:02:06.177070+06:00
+2026-05-11 17:32:08  INFO      Scheduler stopped
+2026-05-11 17:32:10  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:02:10.309558+06:00
+2026-05-11 17:32:14  INFO      Scheduler stopped
+2026-05-11 17:32:18  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:02:18.087993+06:00
+2026-05-11 17:46:36  INFO      Scheduler paused by user
+2026-05-11 17:46:39  INFO      Scheduler resumed  —  next_run=2026-05-11T18:02:18.087993+06:00
+2026-05-11 17:46:43  INFO      ============================================================
+2026-05-11 17:46:43  INFO      SCHEDULER RUN STARTED  —  2026-05-11 11:46:43 UTC
+2026-05-11 17:46:43  INFO      Devices: host, recv
+2026-05-11 17:46:43  INFO      ============================================================
+2026-05-11 17:46:43  INFO      [host] ── Starting push ──
+2026-05-11 17:46:43  WARNING   [host] SKIPPED — no DGHS mapping: [host] No DGHS device_id configured for 'host'. Add it to DGHS_DEVICE_ID_MAP in app/services/dghs_service.py
+2026-05-11 17:46:43  INFO      [recv] ── Starting push ──
+2026-05-11 17:46:43  WARNING   [recv] SKIPPED — no DGHS mapping: [recv] No DGHS device_id configured for 'recv'. Add it to DGHS_DEVICE_ID_MAP in app/services/dghs_service.py
+2026-05-11 17:46:43  INFO      ============================================================
+2026-05-11 17:46:43  INFO      SCHEDULER RUN COMPLETE  —  elapsed=0.0s
+2026-05-11 17:46:43  INFO      ============================================================
+2026-05-11 17:48:13  INFO      Scheduler stopped
+2026-05-11 17:48:15  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:18:15.246771+06:00
+2026-05-11 17:48:18  INFO      Scheduler stopped
+2026-05-11 17:48:25  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:18:25.685560+06:00
+2026-05-11 17:48:39  INFO      Scheduler stopped
+2026-05-11 17:48:40  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:18:40.845923+06:00
+2026-05-11 17:48:44  INFO      ============================================================
+2026-05-11 17:48:44  INFO      SCHEDULER RUN STARTED  —  2026-05-11 11:48:44 UTC
+2026-05-11 17:48:44  INFO      Devices: 24001002, 24001003
+2026-05-11 17:48:44  INFO      ============================================================
+2026-05-11 17:48:44  INFO      [24001002] ── Starting push ──
+2026-05-11 17:48:44  INFO      [24001002] DGHS device_id = 24001002
+2026-05-11 17:48:44  INFO      [24001002] Job created: 7dc68531e9a448a6
+2026-05-11 17:48:46  INFO      [24001002] DONE  total=29  pushed=29  failed=0  no_face=0  elapsed=1.2s  latest=2026-05-11T06:27:36
+2026-05-11 17:48:46  INFO      [24001003] ── Starting push ──
+2026-05-11 17:48:46  INFO      [24001003] DGHS device_id = 24001003
+2026-05-11 17:48:46  INFO      [24001003] Job created: 57e6e3949a6c4ffc
+2026-05-11 17:48:46  INFO      [24001003] DONE  total=18  pushed=18  failed=0  no_face=0  elapsed=0.8s  latest=2026-05-11T10:41:42
+2026-05-11 17:48:46  INFO      ============================================================
+2026-05-11 17:48:46  INFO      SCHEDULER RUN COMPLETE  —  elapsed=2.1s
+2026-05-11 17:48:46  INFO      ============================================================
+2026-05-11 17:50:36  INFO      Scheduler stopped
+2026-05-11 17:50:37  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:20:37.608523+06:00
+2026-05-11 17:50:37  INFO      Scheduler stopped
+2026-05-11 17:50:39  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:20:39.895778+06:00
+2026-05-11 17:50:40  INFO      Scheduler stopped
+2026-05-11 17:50:41  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:20:41.472851+06:00
+2026-05-11 17:50:41  INFO      Scheduler stopped
+2026-05-11 17:50:43  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:20:43.129848+06:00
+2026-05-11 17:50:43  INFO      Scheduler stopped
+2026-05-11 17:50:44  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:20:44.797311+06:00
+2026-05-11 17:50:46  INFO      Scheduler stopped
+2026-05-11 17:50:48  INFO      Scheduler started  —  interval=30min  next_run=2026-05-11T18:20:48.268930+06:00
+2026-05-11 17:50:48  INFO      Scheduler stopped

@@ -25,7 +25,8 @@ from app.services import dghs_service, job_service
 log = get_scheduler_logger()
 
 # Devices to push, in order
-SCHEDULER_DEVICES = ["host", "recv"]
+SCHEDULER_DEVICES = ["24001002", "24001003"]
+
 
 # Interval in minutes
 SCHEDULER_INTERVAL_MINUTES = 30
