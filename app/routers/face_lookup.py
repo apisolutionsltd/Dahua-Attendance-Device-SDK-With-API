@@ -105,7 +105,7 @@ async def get_user_face_any_device(
         })
 
     # ---- ?device=host or ?device=recv → single device --------------------
-    if device in ("24001002", "24001003"):
+    if device in ("2400130", "2400131"):
         if device not in known:
             raise HTTPException(
                 status_code=400,

@@ -29,14 +29,14 @@ log = logging.getLogger(__name__)
 
 DGHS_API_URL   = "http://attendance.dghs.gov.bd/biometricapi/logapi/log_push"
 DGHS_API_KEY   = "9c50edcc3fcf2ec003901b196b27f9d7"
-DGHS_OFFICE_ID = "10000033"
+DGHS_OFFICE_ID = "10000032"
 
 # Maps the Dahua device 'name' (from your DEVICES config in .env) → DGHS device_id.
 # The KEY must exactly match a device 'name' in your DEVICES env var.
 # If a device isn't in this map, push will be refused with a clear error.
 DGHS_DEVICE_ID_MAP: dict[str, str] = {
-    "24001002": "24001002",   # 10.10.20.78 (DHI-ASI6214S-PW)
-    "24001003": "24001003", # 10.10.20.82 — uncomment & set real DGHS ID when known
+    "2400130": "2400130",   # 10.10.20.78 (DHI-ASI6214S-PW)
+    "2400131": "2400131", # 10.10.20.82 — uncomment & set real DGHS ID when known
 }
 
 # Field name the API expects for the attached photo (multipart). Most likely
@@ -125,12 +125,34 @@ def get_dghs_device_id(device_name: str) -> str:
     return dghs_id
 
 
+# def _format_record_time(rec) -> str:
+#     t = rec.stuTime
+#     if t.dwYear == 0:
+#         return ""
+#     return f"{t.dwYear:04d}-{t.dwMonth:02d}-{t.dwDay:02d}T" \
+#            f"{t.dwHour:02d}:{t.dwMinute:02d}:{t.dwSecond:02d}"
+
+
+# def _format_record_time(rec) -> str:
+#     t = rec.stuTime
+#     if t.dwYear == 0:
+#         return ""
+#     from datetime import datetime
+#     dt = datetime(t.dwYear, t.dwMonth, t.dwDay,
+#                   t.dwHour, t.dwMinute, t.dwSecond)
+#     return dt.strftime("%Y-%m-%dT%I:%M:%S %p")
+
+
 def _format_record_time(rec) -> str:
     t = rec.stuTime
     if t.dwYear == 0:
         return ""
-    return f"{t.dwYear:04d}-{t.dwMonth:02d}-{t.dwDay:02d}T" \
-           f"{t.dwHour:02d}:{t.dwMinute:02d}:{t.dwSecond:02d}"
+    from datetime import datetime, timedelta
+    # Device stores time in UTC. Add 6 hours for Bangladesh Standard Time (BST = UTC+6)
+    dt_utc = datetime(t.dwYear, t.dwMonth, t.dwDay,
+                      t.dwHour, t.dwMinute, t.dwSecond)
+    dt_bst = dt_utc + timedelta(hours=6)
+    return dt_bst.strftime("%Y-%m-%dT%I:%M:%S %p")
 
 
 def _push_one(log_entry: dict, jpg_bytes: bytes,
@@ -210,6 +232,15 @@ def _push_batch(
         image_index += 1
 
     headers = {"Api-Key": DGHS_API_KEY}
+     # ↓ ADD THIS BLOCK
+    print("\n" + "="*60)
+    print(f"PUSHING TO: {DGHS_API_URL}")
+    print(f"PAYLOAD ({len(entries)} records):")
+    for e in entries:
+        print(f"  user_id={e['user_id']}  timestamp={e['timestamp']}  "
+              f"verify_mode={e['verify_mode']}  device_id={e['device_id']}")
+    print("="*60 + "\n")
+    # ↑ ADD THIS BLOCK
 
     try:
         resp = session.post(
@@ -220,6 +251,10 @@ def _push_batch(
         )
     except requests.RequestException as e:
         return False, f"http_error: {e}"
+    
+    # ↓ ADD THIS LINE (after resp)
+    print(f"RESPONSE: HTTP {resp.status_code} → {resp.text[:300]}\n")
+    # ↑ ADD THIS LINE
 
     if 200 <= resp.status_code < 300:
         return True, f"http_{resp.status_code}: {resp.text[:500]}"
