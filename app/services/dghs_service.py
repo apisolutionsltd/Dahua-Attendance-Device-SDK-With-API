@@ -143,6 +143,17 @@ def get_dghs_device_id(device_name: str) -> str:
 #     return dt.strftime("%Y-%m-%dT%I:%M:%S %p")
 
 
+# def _format_record_time(rec) -> str:
+#     t = rec.stuTime
+#     if t.dwYear == 0:
+#         return ""
+#     from datetime import datetime, timedelta
+#     # Device stores time in UTC. Add 6 hours for Bangladesh Standard Time (BST = UTC+6)
+#     dt_utc = datetime(t.dwYear, t.dwMonth, t.dwDay,
+#                       t.dwHour, t.dwMinute, t.dwSecond)
+#     dt_bst = dt_utc + timedelta(hours=6)
+#     return dt_bst.strftime("%Y-%m-%dT%I:%M:%S %p")
+
 def _format_record_time(rec) -> str:
     t = rec.stuTime
     if t.dwYear == 0:
@@ -152,7 +163,7 @@ def _format_record_time(rec) -> str:
     dt_utc = datetime(t.dwYear, t.dwMonth, t.dwDay,
                       t.dwHour, t.dwMinute, t.dwSecond)
     dt_bst = dt_utc + timedelta(hours=6)
-    return dt_bst.strftime("%Y-%m-%dT%I:%M:%S %p")
+    return dt_bst.strftime("%Y-%m-%dT%H:%M:%S")  # ← %H (24h), removed %p
 
 
 def _push_one(log_entry: dict, jpg_bytes: bytes,
